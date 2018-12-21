@@ -36,6 +36,7 @@ class Chess(ShowBase):
         camera.setPos(6, -9, 4) # sets our view into the enviornment
         camera.setHpr(27, -15, 0)
         self.contr = Controller(self)
+        self.setupHelp()
         self.reset()
     def reset(self):
         self.loadSquares() # loads lower squares onto the render tree to be drawn
@@ -106,7 +107,7 @@ class Chess(ShowBase):
         self.pLight.setPos(-10, -5, 10)
         self.lBoard.setLight(self.pLight)
         aLight = AmbientLight('aLight')
-        aLight.setColor(Vec4(0.4, 0.4, 0.4, 1))
+        aLight.setColor(Vec4(0.5, 0.5, 0.5, 1))
         self.alnp = render.attachNewNode(aLight)
         render.setLight(self.alnp)
         dLight = DirectionalLight('dLight')
@@ -349,6 +350,23 @@ class Chess(ShowBase):
         self.cantPath.setScale(0.1)
         self.cantPath.setPos((0, 0, 0))
         taskMgr.doMethodLater(2, self.removeText, "remTxt", extraArgs=[])
+    def setupHelp(self):
+        # shows a help screen
+        self.showH = False
+        self.helpTxt = TextNode("helpTxt")
+        self.helpTxt.setText(HELPSTRING)
+        self.helpTxt.setTextColor((1, 1, 1, 1))
+        self.helpTxt.setCardColor((.3, .3, .3, .91)) # 99, 105, 96
+        self.helpTxt.setCardAsMargin(.5, .5, .5, .5)
+        self.helpTxt.setCardDecal(True)
+    def showHelp(self):
+        self.showH = True
+        self.helpPath = aspect2d.attachNewNode(self.helpTxt)
+        self.helpPath.setScale(0.07)
+        self.helpPath.setPos((-1.85, 0, .85))
+    def removeHelp(self):
+        self.showH = False
+        self.helpPath.removeNode()
     def gameOver(self):
         # shows Game Over text
         gameOverTxt = TextNode("cantSelect")
@@ -363,33 +381,6 @@ class Chess(ShowBase):
         self.gameOverPath.setPos((0, 0, 0))
     def removeText(self):
         self.cantPath.removeNode()
-    def startScreen(self):
-        # load the text and the fog
-        self.startText()
-        self.fog = Fog('backgroundFog')
-        self.setFog(0.1)
-        # set up the intervals to initiate when entering the game mode
-        self.camPosHprInterv = LerpPosHprInterval(camera, 2, Point3(0, -8, 7),
-                                          (0, -32, 0), (6, -9, 4), (27, -15, 0),
-                                          blendType='easeInOut')
-        self.fogInterv = LerpFunctionInterval(self.setFog, fromData=0.1,
-                                                toData=0, duration=2)
-        self.txtInterv = LerpFunctionInterval(self.setStartTextColor,
-                fromData=1, toData=0, duration=2, extraArgs=[self.startTxt])
-        self.fontTrans=0
-
-    def switchSides(self):
-        self.switchInt = LerpFunctionInterval(self.moveCamera,
-                fromData=self.angle, toData=(self.angle+math.pi), duration=1.2)
-        self.switchInt.start()
-        self.angle += math.pi
-        if self.turn == "white":
-            self.turn = "black"
-        else: self.turn = "white"
-    def moveCamera(self, angle):
-        pos = [11.5 * math.sin(angle), 11.5 * math.cos(angle - math.pi) + 3.5, 7]
-        hpr = [angle * 180 / math.pi, -32, 0]
-        camera.setPosHpr(pos[0], pos[1], pos[2], hpr[0], hpr[1], hpr[2])
     def startText(self):
         # starting text displaying start intructions
         titleTxt = TextNode('introText')
@@ -414,6 +405,32 @@ class Chess(ShowBase):
         instPath.setPos((0, 0, -0.8))
         self.startTxt = [titleTxt, authorTxt, instTxt]
         self.setStartTextColor(self.fontTrans, self.startTxt)
+    def startScreen(self):
+        # load the text and the fog
+        self.startText()
+        self.fog = Fog('backgroundFog')
+        self.setFog(0.1)
+        # set up the intervals to initiate when entering the game mode
+        self.camPosHprInterv = LerpPosHprInterval(camera, 2, Point3(0, -8, 7),
+                                          (0, -32, 0), (6, -9, 4), (27, -15, 0),
+                                          blendType='easeInOut')
+        self.fogInterv = LerpFunctionInterval(self.setFog, fromData=0.1,
+                                                toData=0, duration=2)
+        self.txtInterv = LerpFunctionInterval(self.setStartTextColor,
+                fromData=1, toData=0, duration=2, extraArgs=[self.startTxt])
+        self.fontTrans=0
+    def switchSides(self):
+        self.switchInt = LerpFunctionInterval(self.moveCamera,
+                fromData=self.angle, toData=(self.angle+math.pi), duration=1.2)
+        self.switchInt.start()
+        self.angle += math.pi
+        if self.turn == "white":
+            self.turn = "black"
+        else: self.turn = "white"
+    def moveCamera(self, angle):
+        pos = [11.5 * math.sin(angle), 11.5 * math.cos(angle - math.pi) + 3.5, 7]
+        hpr = [angle * 180 / math.pi, -32, 0]
+        camera.setPosHpr(pos[0], pos[1], pos[2], hpr[0], hpr[1], hpr[2])
     def setStartTextColor(self, alpha, textNodes):
         for node in textNodes:
             node.setTextColor(1, 1, 1, alpha)
@@ -440,6 +457,7 @@ class Controller(DirectObject):
         self.accept('enter', self.enter, [chessObj])
         self.accept('space', self.space, [chessObj])
         self.accept('shift', self.shift, [chessObj])
+        self.accept('h', self.h, [chessObj])
         self.accept('r', self.restart, [chessObj])
         self.accept('escape', chessObj.exit)
 
@@ -532,6 +550,11 @@ class Controller(DirectObject):
                 chessObj.dehighlight()
                 if chessObj.selSqrCoor[0] == 1:
                     chessObj.loadUpperSquares("visible")
+    def h(self, chessObj):
+        if chessObj.showH:
+            chessObj.removeHelp()
+        else:
+            chessObj.showHelp()
     def restart(self, chessObj):
         chessObj.reset()
     def selectPiece(self, chessObj):
