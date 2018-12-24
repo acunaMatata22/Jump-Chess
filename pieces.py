@@ -6,14 +6,17 @@ board = [[([None] * 8) for row in range(8)] for i in range(2)]
 check = False
 # the board keeps track of the locations of all the pieces
 class Piece(object):
-    def __init__(self, color, modelPath, pos, node, scale=1):
+    def __init__(self, color, modelPath, pos, node, scale=1, rotation=0):
         # number is so different pieces arent equivalent and can be selected
         # individually
         self.model = loader.loadModel(modelPath)
         self.model.reparentTo(node)
         self.model.setColor(color)
         self.model.setPos(squarePos(pos))
-        self.model.setScale(scale)
+        if rotation != 0:
+            self.model.setHpr(rotation, 0, 0)
+        if scale != 1:
+            self.model.setScale(scale)
         self.position = pos
         self.color = None
     def move(self, newCoor, chessObj, promotion=False):
@@ -413,6 +416,7 @@ class Knight(Piece):
                 pos = number
                 coor = indexToTuple(pos)
                 board[coor[0]][coor[1]][coor[2]] = self
+            rotation = 180
         else:
             col = WHITEP
             if implicit:
@@ -422,7 +426,9 @@ class Knight(Piece):
                 pos = number
                 coor = indexToTuple(pos)
                 board[coor[0]][coor[1]][coor[2]] = self
-        super(Knight, self).__init__(col, "models/knight", pos, node)
+            rotation = 0
+        super(Knight, self).__init__(col, "models/knight", pos, node,
+                                                        rotation=rotation)
         self.color = color
     def __repr__(self):
         return "Knight"
@@ -481,6 +487,7 @@ class Bishop(Piece):
                 pos = number
                 coor = indexToTuple(pos)
                 board[coor[0]][coor[1]][coor[2]] = self
+            rotation = 180
         else:
             col = WHITEP
             if implicit:
@@ -490,7 +497,9 @@ class Bishop(Piece):
                 pos = number
                 coor = indexToTuple(pos)
                 board[coor[0]][coor[1]][coor[2]] = self
-        super(Bishop, self).__init__(col, "models/bishop", pos, node)
+            rotation = 0
+        super(Bishop, self).__init__(col, "models/bishop", pos, node,
+                                                        rotation = rotation)
         self.color = color
     def __repr__(self):
         return "Bishop"
@@ -537,6 +546,7 @@ class Queen(Piece):
 
 class King(Piece):
     def __init__(self, color, node, scale=1):
+        rotation = 90
         if color == "black":
             col = BLACKP
             pos = 60
@@ -545,7 +555,8 @@ class King(Piece):
             col = WHITEP
             pos = 4
             board[0][0][4] = self
-        super(King, self).__init__(col, "models/king", pos, node, scale)
+        super(King, self).__init__(col, "models/king", pos, node, scale,
+                                                        rotation = rotation)
         self.color = color
     def __repr__(self):
         return "King"
